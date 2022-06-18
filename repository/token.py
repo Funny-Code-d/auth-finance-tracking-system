@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status, Depends
-from models.token import TokenIn, Token, TokenOut, TokenAuthIn, TokenHash, TokenDelete
+from models.token import TokenIn, Token, TokenOut, TokenAuthIn, TokenHash, TokenDelete, RefreshToken
 from core.security import create_hash_token, verify_hash_token
 from orm.token_map import TokenEntity
 import datetime
 from typing import List
-
+import random
+import string
 
 class TokenRepository():
 
@@ -34,21 +35,25 @@ class TokenRepository():
         )
 
 
-    async def refresh_token(self, token: TokenAuthIn) -> TokenHash:
+    async def refresh_token(self, token: RefreshToken) -> TokenHash:
         """Создание нового jwt"""
         
-        token_sk = await self.verify_refresh_token(token.access_token, token.refresh_token)
+        old_refresh_token = await self.db_orm.get_refresh_token(token.email)
 
-        if token_sk is not None:
-            new_access_token = create_hash_token(token.access_token)
+        if old_refresh_token is not None:
+            if verify_hash_token(token.refresh_token, old_refresh_token['refresh_token']):
+                random_str = self.generate_random_string(30)
+                new_access_token = create_hash_token(random_str)
             
-            new_token = TokenHash(
-                token_sk=token_sk,
-                access_token=new_access_token
-            )
-            
-            await self.db_orm.update_access_token(new_token)
-            return new_token
+                new_token = TokenHash(
+                    token_sk=old_refresh_token['token_sk'],
+                    access_token=new_access_token
+                )
+                
+                await self.db_orm.update_access_token(new_token)
+                return new_token
+            else:
+                return False
         else:
             return False
             
@@ -103,3 +108,8 @@ class TokenRepository():
     
     def calculating_duration_token(self):
         return datetime.datetime.now() + datetime.timedelta(days=365)
+
+    def generate_random_string(self, length):
+        letters = string.ascii_lowercase
+        rand_string = ''.join(random.choice(letters) for i in range(length))
+        return rand_string

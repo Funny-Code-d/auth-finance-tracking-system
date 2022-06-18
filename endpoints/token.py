@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from repository.token import TokenRepository
-from models.token import Token, TokenIn, TokenOut, TokenAuthIn, TokenDelete
+from models.token import Token, TokenIn, TokenOut, TokenAuthIn, TokenDelete, RefreshToken
 from .depends import get_token_repositories
 
 route = APIRouter()
@@ -14,7 +14,7 @@ async def create_token(
 
 @route.post("/refresh", status_code=200)
 async def refresh_token(
-    token: TokenAuthIn,
+    token: RefreshToken,
     tokens: TokenRepository = Depends(get_token_repositories)):
     
     responce = await tokens.refresh_token(token)

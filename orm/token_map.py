@@ -84,3 +84,17 @@ class TokenEntity(BaseEntity):
         query = hub_token.delete().where(hub_token.c.token_sk==token_sk)
         await self.database.execute(query=query)
         return None
+
+    async def get_refresh_token(self, email):
+        query = select(
+            hub_token.c.token_sk,
+            hub_token.c.refresh_token,
+        ).join_from(hub_token, set_token).where(set_token.c.email_owner==email)
+        refresh_token = await self.database.fetch_one(query=query)
+        if refresh_token is not None:
+            return {
+                "token_sk" : refresh_token['token_sk'],
+                "refresh_token" : refresh_token['refresh_token']
+                }
+        else:
+            return False

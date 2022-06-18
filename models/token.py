@@ -41,3 +41,6 @@ class TokenInfo(BaseModel):
     email_owner: EmailStr
     date_create: datetime.datetime
 
+class RefreshToken(BaseModel):
+    email: EmailStr
+    refresh_token: str
