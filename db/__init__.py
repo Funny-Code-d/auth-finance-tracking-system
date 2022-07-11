@@ -1,5 +1,5 @@
 from .hubs import hub_token
-from .settelites import set_token
+from .settelites import sat_token
 
 from .base import metadata, engine
 
